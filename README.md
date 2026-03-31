@@ -77,6 +77,11 @@ This is the place for you to write reflections:
 ### Mandatory (Publisher) Reflections
 
 #### Reflection Publisher-1
+1. Menurut saya, pada kasus BambangShop ini trait/interface `Subscriber` tidak wajib jika kebutuhan saat ini hanya satu jenis subscriber dengan perilaku yang sama (menerima notifikasi via URL). Struct model tunggal sudah cukup untuk menyimpan data (`url`, `name`) dan menjalankan operasi yang dibutuhkan. Trait baru menjadi penting jika nanti ada banyak variasi subscriber dengan perilaku berbeda (misalnya retry policy, protokol berbeda, atau format payload berbeda), supaya kode lebih mudah diekstensikan tanpa mengubah banyak bagian lain.
+
+2. Untuk `id` dan `url` yang diharapkan unik, `Vec` kurang ideal karena pengecekan duplikasi dan penghapusan membutuhkan pencarian linear `O(n)`. Struktur map seperti `DashMap` lebih sesuai karena memberi akses berbasis key yang lebih cepat dan natural untuk enforce uniqueness. Di implementasi sekarang, penyimpanan bertingkat `product_type -> (url -> Subscriber)` sudah tepat karena kebutuhan lookup utamanya memang berdasarkan `product_type` dan `url`.
+
+3. Walaupun pola desainnya bisa disebut Singleton (satu sumber data global), di Rust kita tetap perlu memilih struktur data yang aman untuk konkurensi. Variabel statis global yang diakses dari banyak thread tidak otomatis aman. Karena aplikasi web Rocket berjalan konkuren, penggunaan `DashMap` tetap relevan agar operasi baca/tulis subscriber thread-safe tanpa harus mengelola locking manual yang kompleks. Jadi Singleton dan `DashMap` bukan pilihan yang saling menggantikan: Singleton menjawab “jumlah instance”, sedangkan `DashMap` menjawab “keamanan akses konkuren”.
 
 #### Reflection Publisher-2
 
